@@ -3,7 +3,6 @@
  */
 var Race = function () {
 	this.horses = null;
-	this.isWinner = false;
 };
 
 /**
@@ -30,46 +29,33 @@ Race.prototype.loadJSON = function (file, callback) {
  * @returns {Race}
  */
 Race.prototype.start = function (horses) {
-	this.horses = horses;
-
-	return this;
-};
-
-/**
- * @param showWinner
- * @returns {Race}
- */
-Race.prototype.then = function (showWinner) {
-	var horses = this.horses;
-
-	this.run(horses[0], showWinner);
-	this.run(horses[1], showWinner);
-	this.run(horses[2], showWinner);
-	this.run(horses[3], showWinner);
-
-	return this;
-};
-
-/**
- * @param horse
- * @param showWinner
- * @returns {Race}
- */
-Race.prototype.run = function (horse, showWinner) {
 	var self = this;
-	var source = horse.url;
-	if (self.isWinner) {
-		return self;
-	}
+	this.horses = horses;
+	horses.forEach(function (horse, index) {
+		var source = horse.url;
+		var start_time = new Date().getTime();
+		self.loadJSON(source, function(response) {
+			var data = JSON.parse(response);
+			var image = data.image;
+			var request_time = new Date().getTime() - start_time;
+			self.horses[index].image = image;
+			self.horses[index].time = request_time;
+		});
+	});
 
-    self.loadJSON(source, function (response) {
-        var data = JSON.parse(response);
-        var winner = {};
-        winner.name = horse.name;
-        winner.image = data.image;
-        showWinner(winner);
-        self.isWinner = true;
-    });
+	return this;
+};
 
-	return self;
+/**
+ * @param race
+ * @returns {Race}
+ */
+Race.prototype.then = function (race) {
+	var self = this;
+	var horses = self.horses;
+	horses.forEach(function (horse) {
+		race(horse);
+	});
+
+	return this;
 };
